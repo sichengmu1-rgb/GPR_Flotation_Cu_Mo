@@ -1,6 +1,5 @@
 %% ============================================================
-%%  Variogram-based GPR on industrial copper-molybdenum flotation data
-%%  Draft -- arXiv preprint
+%%  Kriging the operating window of a copper-molybdenum circuit
 %% ============================================================
 \documentclass[final,11pt,nopreprintline]{elsarticle}
 
@@ -9,27 +8,26 @@
 \usepackage{graphicx}
 \graphicspath{{../figures/}{figures/}}
 \usepackage{hyperref}
-\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black,filecolor=black,pdfhighlight=/N}
-\AtBeginDocument{\hypersetup{linkcolor=black,citecolor=black,urlcolor=black,filecolor=black}}
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black,filecolor=black}
 \usepackage{microtype}
 \usepackage{booktabs}
 
-\renewcommand{\topfraction}{0.92}
-\renewcommand{\bottomfraction}{0.75}
-\renewcommand{\textfraction}{0.06}
-\renewcommand{\floatpagefraction}{0.85}
+\renewcommand{\topfraction}{0.93}
+\renewcommand{\bottomfraction}{0.80}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.90}
 \setcounter{topnumber}{2}
 \setcounter{totalnumber}{4}
-\setlength{\textfloatsep}{12pt plus 2pt minus 2pt}
-\setlength{\intextsep}{12pt plus 2pt minus 2pt}
+\setlength{\textfloatsep}{9pt plus 2pt minus 2pt}
+\setlength{\intextsep}{9pt plus 2pt minus 2pt}
 
 \journal{Minerals Engineering}
 
 \begin{document}
 \begin{frontmatter}
 
-\title{Applicability of variogram-based Gaussian process regression to
-industrial flotation data: a copper--molybdenum case study}
+\title{The operating window for copper--molybdenum separation: a Gaussian
+process model of concentrate grade, and of what it does not control}
 
 \author{Sicheng Mu\corref{cor1}}
 \ead{sichengmu2026@163.com}
@@ -39,314 +37,361 @@ industrial flotation data: a copper--molybdenum case study}
 \cortext[cor1]{Corresponding author.}
 
 \begin{abstract}
-Variogram-based Gaussian process regression has recently been
-demonstrated as a probabilistic framework for optimising mineral
-processing circuits, with validation on a statistically designed
-flotation campaign. Its applicability to plant campaign data, which are
-typically acquired one factor at a time and are subject to measurement
-noise, has not been examined. The present study applies the published
-workflow, without modification, to thirty-eight flotation tests from a
-copper--molybdenum concentrator. Predicted recoveries outside the
-physically admissible range are obtained over a substantial fraction of
-the interpolated domain, and the reported Pareto frontier is not
-reproducible under posterior resampling. Three modelling assumptions
-account for these observations, and modifications to each are proposed
-and evaluated by leave-one-out cross-validation. The modified workflow
-yields predictions that satisfy physical bounds, an uncertainty estimate
-consistent with the observed measurement variability, and an operating
-window that agrees with independent conclusions drawn from the same
-campaign.
+A variogram-based Gaussian process model is fitted to twenty-nine bench
+flotation tests from a copper--molybdenum concentrator and inverted for
+the operating conditions that minimise the copper penalty in the
+molybdenum concentrate. Two points of method are settled first. The
+campaign is not one-factor-at-a-time but three two-factor planes sharing
+a grind-fineness axis, so a kriging surface is recoverable on each; and
+the response is concentrate grade rather than recovery, because the
+archived grades satisfy the mass balance throughout while the archived
+copper recoveries do not. Both grades are predictable from grind
+fineness, pulp pH, diesel dosage and conditioning time, and the surfaces
+recover an interaction between fineness and diesel dosage that a
+single-length-scale model cannot represent. Conditioning time is inert.
+The inversion gives an operating window at the upper bounds of the
+tested ranges, corroborated by the nearest measured test and by
+resampling of the data. A limitation of the study is that none of the
+four operating variables correlates strongly with the separation,
+whereas pulp rheology and concentrate wettability vary strongly with
+clay content and temperature, the correlation between wettability and
+temperature changing from negative to positive when clay is present.
 \end{abstract}
 
 \begin{keyword}
-froth flotation \sep Gaussian process regression \sep uncertainty
-quantification \sep multi-objective optimisation \sep
-copper--molybdenum separation
+froth flotation \sep copper--molybdenum separation \sep Gaussian process
+regression \sep kriging \sep concentrate grade
 \end{keyword}
 \end{frontmatter}
 
 \section{Introduction}
 
-The progressive depletion of high-grade, readily processed sulphide ores
-has increased the sensitivity of flotation performance to variations in
-feed mineralogy and pulp chemistry, narrowing the range of operating
-conditions over which target grades and recoveries can be maintained
-simultaneously. Copper--molybdenum separation illustrates the difficulty
-well, since molybdenite and chalcopyrite are both naturally hydrophobic
-and the reagent regimes that promote the flotation of one generally
-promote the flotation of the other as well.
+Copper in a molybdenum concentrate is a smelter penalty that cannot be
+removed downstream. Molybdenite and chalcopyrite are both naturally
+hydrophobic, so reagents that float one also float the other, and the
+separation rests on small differences in floatability. A plant can
+adjust few variables: grind fineness, pulp pH, collector dosage and
+conditioning time. A campaign that varies these and assays the
+concentrate supports a response surface from which untested settings can
+be proposed.
 
-Surrogate models that predict metallurgical response from operating
-variables, and that quantify the confidence associated with each
-prediction, are consequently of practical value. Gaussian process
-regression is well suited to this setting: it performs comparatively well
-on small datasets and provides a posterior variance as an intrinsic part
-of its output rather than as a separate estimate.
-
-The specification of the prior covariance function is a central question
-in such applications. Eskanlou, Yin and Caers proposed deriving it
-directly from the data through empirical variograms fitted in the space
-of the operating variables, and demonstrated the approach on a designed
-flotation campaign, reporting a Pareto-efficient frontier between two
-competing responses which could be mapped back to process settings. The
-formulation is attractive because the covariance structure is estimated
-rather than assumed, and the accompanying implementation has been made
-openly available.
-
-The present work examines how this framework behaves when it is applied
-to data of a different character. Designed experiments distribute
-observations through the predictor space and are conducted under
-controlled conditions; plant campaign data are acquired one factor at a
-time, populate the space along coordinate directions, and carry
-measurement variability that a designed programme is intended to
-minimise. Whether the framework transfers between these two regimes is a
-question of practical consequence for industrial application, and it is
-the question addressed here.
+Gaussian process regression is suited to this, being defined on small
+datasets and returning a posterior variance as part of its output.
+Eskanlou, Yin and Caers derive the prior covariance function from
+empirical variograms in the space of the operating variables and
+demonstrate the approach on a designed flotation campaign, mapping a
+Pareto-efficient frontier back to process settings. This study applies
+that framework to a plant campaign of a different character, and reports
+both what the resulting surface supports and what it does not.
 
 \section{Data}
+\label{sec:data}
 
-The dataset originates from a molybdenum concentrator at Jinduicheng,
-Shaanxi Province, China, where chalcopyrite occurs as a penalty impurity
-in the molybdenite concentrate. Seasonal variation in the copper content
-of the concentrate motivated a two-year experimental campaign, in which
-grinding fineness, pulp pH, diesel collector dosage and diesel--pulp
-conditioning time were varied while molybdenum and copper recovery were
-measured on the rougher concentrate. Thirty-eight tests were available
-for analysis; the ranges of the variables and responses are summarised in
-Table~\ref{tab:data}.
+Twenty-nine rougher flotation tests were run at a molybdenum
+concentrator at Jinduicheng, Shaanxi Province, on a $300$~g feed
+assaying $0.5436$~\% molybdenum and $0.0364$~\% copper. Grind fineness
+ranged from $30$ to $65$~\% passing $0.074$~mm, pulp pH from $3.5$ to
+$11$, diesel dosage from $50$ to $200$~g/t, and diesel--pulp
+conditioning time from $5$ to $25$~min. Molybdenum grade in the rougher
+concentrate ranged from $1.10$ to $6.67$~\% and copper grade from
+$0.215$ to $0.834$~\%.
 
-\begin{table}[htbp]
-\centering
-\caption{Operating variables and metallurgical responses measured on the
-rougher concentrate.}
-\label{tab:data}
-\begin{tabular}{llll}
-\toprule
- & Variable & Range & Unit \\
-\midrule
-$x_1$ & Grinding fineness ($-0.074$~mm) & 40--75 & \% \\
-$x_2$ & Pulp pH & 3.5--11 & -- \\
-$x_3$ & Diesel dosage & 50--200 & g/t \\
-$x_4$ & Conditioning time & 5--25 & min \\
-\midrule
-$y_1$ & Mo recovery & 7--58 & \% \\
-$y_2$ & Cu recovery & 2--52 & \% \\
-\bottomrule
-\end{tabular}
-\end{table}
+Each reagent was swept from the same two anchor values of grind
+fineness, $40$~\% and $65$~\%, and the fineness sweep was run at the
+anchor values of the reagents. The design is therefore three two-factor
+planes sharing a fineness axis --- fineness against pH, against diesel
+dosage and against conditioning time, with fifteen, fifteen and
+seventeen tests respectively --- and fineness--reagent interactions are
+identified (Fig.~\ref{fig:data}). Reagent--reagent interactions are not
+sampled.
 
-Two characteristics of the data acquisition are relevant to the analysis
-that follows. The campaign was conducted in a one-factor-at-a-time
-manner, which is the usual practice for plant trials, with the
-consequence that the thirty-eight observations are distributed along a
-limited number of coordinate directions rather than throughout the
-interior of the four-dimensional predictor space. In addition, pulp pH
-was varied in only one of the test series, so that for the greater part
-of the dataset this variable remains constant.
+The response is the concentrate grade rather than the recovery. With a
+$300$~g feed at $0.5436$~\% molybdenum, concentrate mass multiplied by
+molybdenum grade reproduces the reported molybdenum recovery in all
+twenty-nine tests; the copper recovery is reproduced in fifteen, and
+therefore depends on a feed assay not archived with the test. Grade is a
+direct measurement of the concentrate. A second check against the
+figures published from the same archive leaves copper grade unchanged in
+all twenty-nine tests and differs in seven molybdenum values, in each of
+which the archived value satisfies the mass balance.
 
-\section{Behaviour of the reference workflow}
-
-The published procedure comprises the following steps: the predictors are
-scaled to the unit interval; the standardised responses are reduced to
-two principal components; an empirical variogram is fitted to each
-component as a function of the predictor coordinates; ordinary kriging is
-performed; an ensemble of conditional realisations is generated on an
-augmented grid; each realisation is transformed back through the inverse
-principal component and standardisation steps; and the Pareto frontier of
-the ensemble mean surface is computed.
-
-Three elements of this sequence are adopted in the original work without
-accompanying sensitivity analysis, and each is examined below with
-respect to the present dataset.
-
-The first concerns the treatment of the principal components.
-Independently simulated realisations of $\mathrm{PC}_1$ and
-$\mathrm{PC}_2$ are combined through the inverse principal component
-transformation. Since PCA ensures that the components are uncorrelated
-but not that they are independent, and since conditional simulation is a
-nonlinear operation, this combination is not generally
-correlation-preserving. For the present dataset, the resulting responses
-lie considerably outside the convex hull of the observations; together
-with an interpolation grid that extends beyond the data bounds in every
-scaled coordinate, this produces the predictions shown in
-Fig.~\ref{fig:failure}.
+Three production lines were surveyed over $50$ to $75$~\% fineness,
+giving eighteen grade measurements that are not used to fit the model;
+because all three were surveyed at the same six levels, they also give
+the plant pure error. Pulp viscosity was measured against temperature,
+shear rate, and clay identity and loading, for chlorite, illite,
+muscovite and kaolinite, each condition twice; contact angle was
+measured in a clean system and in one containing $25$~\% chlorite,
+against temperature, chlorite content and diesel dosage.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.95\textwidth]{Fig_failure.png}
-\caption{Application of the reference workflow to the industrial
-dataset. The shaded region indicates the range physically accessible to a
-recovery value; the predictions obtained for molybdenum and copper
-recovery fall outside this range over 42.7\% and 16.5\% of the
-interpolated domain, reaching $-110.9\%$ and $-70.3\%$ respectively.}
-\label{fig:failure}
+\includegraphics[width=0.98\textwidth]{Fig1_data.png}
+\caption{(a) The twenty-nine bench tests, coloured by grind fineness.
+(b), (c) The fineness $\times$ pH and fineness $\times$ diesel planes;
+markers distinguish the two grades and colours the two fineness anchors.}
+\label{fig:data}
 \end{figure}
 
-The second concerns the covariance structure. A single length scale is
-applied to all four predictors, which implies that each influences the
-response equally per unit of scaled distance. This equality refers to the
-numerical scaling of the variables rather than to their relative
-metallurgical significance, and it is the contrast between the two that
-the subsequent analysis shows to be of interest.
+\section{Model}
 
-The third concerns interpolation. Kriging is performed such that the
-surface reproduces the observations exactly, which is appropriate for a
-deterministic simulator and is not appropriate where measurement
-variability is present. When the noise level is estimated from the data
-rather than constrained to zero, values of $0.64$ and $0.46$ in
-standardised units are obtained for the two responses, corresponding to
-approximately half the response standard deviation. The reference
-workflow reports zero posterior variance at these same measurement
-locations. It may further be noted that the original procedure reports no
-cross-validation or held-out error, so that discrepancies of this kind
-are not detectable from its outputs alone.
-
-\section{Modifications and their effect}
-
-Four changes were made. The first three address the assumptions
-identified above, and the fourth concerns the decision problem itself.
-
-The responses were modelled directly rather than through principal
-components, which removes the inverse transformation from the prediction
-pathway. One process was fitted per response; this does not retain the
-correlation between responses, and a co-regionalised formulation that
-would do so is identified below as the natural extension, but the
-predictions become physically admissible as a result.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.92\textwidth]{Fig_ard.png}
-\caption{Inverse length scales, interpreted as predictor sensitivities,
-for each response. The two profiles differ both in magnitude and in
-ordering.}
-\label{fig:ard}
-\end{figure}
-
-An automatic relevance determination covariance function was adopted,
+Each response is modelled as a Gaussian process with an automatic
+relevance determination covariance function,
 \begin{equation}
 k(\mathbf{x},\mathbf{x}') = \sigma_f^2 \exp\!\left(
 -\tfrac{1}{2}\sum_{i=1}^{d}\frac{(x_i-x_i')^2}{\ell_i^2}\right)
 + \sigma_n^2\delta_{xx'},
+\label{eq:kernel}
 \end{equation}
-with all hyperparameters determined by maximising the marginal
-likelihood. The inverse length scales are then interpretable as
-sensitivities, and are shown in Fig.~\ref{fig:ard}. Molybdenum recovery
-is dominated by pulp pH, which is five and a half times more influential
-than the next variable and thirteen times more influential than grinding
-fineness, whereas copper recovery exhibits a flatter profile ordered
-differently, with pH and conditioning time of comparable importance. A
-covariance function with a single length scale cannot represent either
-of these structures.
+with predictors scaled to the unit interval and all hyperparameters,
+including the nugget $\sigma_n^2$, obtained by maximising the marginal
+likelihood. A non-zero nugget is required: flotation is not a
+deterministic simulator.
 
-Kriging was performed in non-exact form with the nugget estimated from
-the data, which allows the model to represent the finite reproducibility
-of flotation testing and permits the predictive performance to be
-quantified. Leave-one-out cross-validation yields coefficients of
-determination of $0.39$ and $0.67$ for molybdenum and copper recovery,
-with corresponding RMSE values of $10.6$ and $5.9$ percentage points
-(Fig.~\ref{fig:valid}). The difference between the two is of interest:
-molybdenum recovery evidently depends on variables not represented among
-the four predictors, while copper recovery is more nearly determined by
-them.
+Fits are judged by leave-one-out cross-validation, reported as a
+coefficient of determination $Q^2$ and a root-mean-square error, and by
+the loss in $Q^2$ when one predictor is withheld. Two-dimensional
+surfaces are slices through the fitted four-dimensional model at the
+anchor values of the two factors not shown; a separate two-parameter fit
+on each plane cross-validates worse, with $Q^2$ between $-0.01$ and
+$0.40$. An operating window is sought over $160{,}000$ grid points.
+Molybdenum grade is to be raised and copper grade lowered, so the
+non-dominated set is the set of settings for which no other setting
+improves one grade without worsening the other, and a recommendation is
+taken from it as the point closest to the ideal. Its stability is
+examined by resampling the data rather than by drawing Gaussian
+realisations, which are not constrained to be positive.
+
+\section{Results}
+
+\subsection{Prediction of grade}
+
+Both grades are predictable, copper more so than molybdenum
+(Table~\ref{tab:loo}, Fig.~\ref{fig:val}). The fitted nugget accounts
+for $0.34$ of the total variance of molybdenum grade and $0.43$ of
+copper grade; the empirical variograms of Fig.~\ref{fig:vario}, which do
+not absorb short-scale structure that the kernel cannot fit, put the
+unstructured fraction at $0.21$ for both. Residuals are $1.16$ and
+$0.10$ percentage points against observed standard deviations of $1.56$
+and $0.147$.
+
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\caption{Leave-one-out performance, and the loss in $Q^2$ when one
+predictor is withheld.}
+\label{tab:loo}
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{3}{c}{Molybdenum grade} & \multicolumn{3}{c}{Copper grade}\\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+& $Q^2$ & RMSE & $\Delta Q^2$ & $Q^2$ & RMSE & $\Delta Q^2$\\
+\midrule
+All four predictors & $0.434$ & $1.155$ & --- & $0.527$ & $0.099$ & ---\\
+without fineness    &         &         & $0.287$ & & & $0.453$\\
+without pH          &         &         & $0.380$ & & & $0.265$\\
+without diesel      &         &         & $0.193$ & & & $0.094$\\
+without conditioning time &   &         & $0.000$ & & & $0.000$\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.95\textwidth]{Fig_validation.png}
-\caption{Leave-one-out predictions against observed values, with 95\%
-credible intervals.}
-\label{fig:valid}
+\includegraphics[width=0.80\textwidth]{Fig2_variogram.png}
+\caption{Empirical variograms in the scaled operating space with the
+fitted Gaussian models; bars give the number of pairs per distance bin.}
+\label{fig:vario}
 \end{figure}
 
-The fourth modification concerns the objective formulation. Principal
-component loadings of $[0.707,\,0.707]$ indicate that the two recoveries
-are positively correlated over the tested conditions, so that the
-efficient frontier between them is short and describes limited
-trade-off. To assess the stability of the frontier, four hundred
-realisations were sampled from the posterior and the frontier recomputed
-for each. The mean-field frontier contains five points, and across the
-four hundred realisations no point remains on the frontier in more than
-ten percent of them. A chance-constrained dominance criterion was also
-examined, and returned an empty set at all confidence levels tested.
-These observations indicate that the Pareto formulation is not
-well-posed for the present response pair.
+The two criteria rank the predictors identically for molybdenum grade,
+where pH and fineness are comparable and diesel is third. For copper
+grade they disagree: the inverse length scales of Fig.~\ref{fig:val}c
+rank fineness last, at $0.127$ against $0.675$ for diesel, whereas
+withholding fineness costs more $Q^2$ than withholding anything except
+pH. The fineness sweep covers $30$ to $65$~\% in five steps and contains
+a sharp maximum, which one length scale cannot express without
+shortening the others, so the length scale is not a reliable sensitivity
+measure for this variable. Conditioning time contributes nothing under
+either criterion --- its length scale sits at the bound of the
+optimisation range and withholding it changes $Q^2$ by $0.000$ for both
+responses --- although grades along the time series vary by more than a
+factor of two. That variation is scatter.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.95\textwidth]{Fig_frontier.png}
-\caption{(a) Posterior mean field with the mean-field frontier and the
-recommended operating point. (b) Probability of simultaneously exceeding
-both recovery targets.}
-\label{fig:frontier}
+\includegraphics[width=0.95\textwidth]{Fig3_validation.png}
+\caption{Leave-one-out predictions and the inverse length scales of the
+fitted covariance function.}
+\label{fig:val}
 \end{figure}
 
-An alternative formulation was therefore adopted, in which the operating
-conditions are sought for which the probability of exceeding specified
-recovery targets simultaneously is acceptably high. Taking the targets at
-the sixtieth percentile of the observations, corresponding to
-$23\%$ molybdenum and $35\%$ copper recovery, the feasible set comprises
-forty-four grid points at fifty percent confidence and eight at
-seventy-five percent. At ninety percent confidence the set is empty,
-which indicates that the target combination is demanding given the
-variability of the circuit, rather than that the analysis has failed. The
-most favourable point corresponds to a grinding fineness of approximately
-$70\%$, pulp pH of $7.0$, diesel dosage of $100$~g/t and conditioning
-time of $15$~min, with predicted recoveries of $45.7\pm9.9\%$ for
-molybdenum and $41.3\pm5.0\%$ for copper at a joint confidence of $0.88$.
-The conditioning time and collector dosage obtained are consistent with
-the conclusions of the original campaign, which the reference workflow
-was not in a position to verify.
+\subsection{The three planes}
 
-\section{Discussion}
+The fineness $\times$ pH plane has a single optimum at high pH and low
+fineness, at which both grades peak. The fineness $\times$ diesel plane
+contains an interaction: at the low fineness anchor, molybdenum grade
+falls monotonically with diesel addition, from $6.67$~\% at $50$~g/t to
+$2.05$~\% at $200$~g/t, whereas at the high fineness anchor it rises
+from $2.47$ to $4.02$~\% over the same range (Fig.~\ref{fig:surf}).
+Neither structure is representable by a single length scale per
+variable.
 
-The observations reported here are not specific to flotation.
-Variogram-based methods were developed for spatial data, in which the
-distance between two samples is a physical quantity and the variogram
-summarises the spatial continuity of the phenomenon. When the same
-formalism is applied in a parameter space, distance becomes a modelling
-choice rather than a physical one. For a designed experiment, in which
-observations are distributed through the space, the consequences of that
-choice are limited. For one-factor-at-a-time plant data, the observations
-lie along coordinate directions, inter-point distances are dominated by
-whichever variable was varied, and an isotropic covariance function
-attributes this geometrical property to physical similarity.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{Fig4_surface.png}
+\caption{Fitted kriging surfaces, taken as slices through the
+four-dimensional model at the anchor settings of the two factors not
+shown. Points are the tests lying on each plane.}
+\label{fig:surf}
+\end{figure}
 
-Several diagnostics follow, none of which require prior knowledge of the
-correct result. The number of observations per effective dimension can be
-counted, the extent of the interpolation grid relative to the data can be
-inspected, it can be verified that predictions respect bounds known to
-apply to the quantity of interest, and the stability of derived
-quantities under posterior resampling can be assessed. For the present
-dataset, three of these four would have identified the issues described
-above before they appeared in any figure.
+\subsection{The operating window}
 
-Two limitations should be noted. The dataset comprises thirty-eight
-observations from a single deposit, and the behaviour described is
-demonstrated on one case rather than established statistically; the
-accompanying code permits the same diagnostics to be applied to other
-datasets. In addition, modelling the responses independently forgoes the
-correlation between them, which the data contain. A co-regionalised
-formulation would retain this information and is considered the most
-valuable immediate extension, particularly in view of the fact that the
-operational decision at this concentrator concerns concentrate grade
-rather than recovery, where the two objectives are in genuine conflict
-and a frontier formulation would be well posed.
+The two grades correlate at $+0.678$, so the trade-off of
+Fig.~\ref{fig:pareto}a is the boundary of a cloud; the non-dominated set
+contains $747$ of the $160{,}000$ grid points. The recommended
+conditions are given in Table~\ref{tab:window}, with the mean, standard
+deviation and probability of meeting a copper target in
+Fig.~\ref{fig:ens}. Both the fineness and the diesel dosage lie at the
+upper bounds of the tested ranges, which is why the plant surveys are
+needed.
 
-\section{Conclusions}
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{2.5pt}
+\caption{Recommended operating conditions. The first row is the point
+of the non-dominated set closest to the ideal; the second minimises
+copper grade subject to a molybdenum grade of at least $3.5$~\%. The
+third row gives the median and standard deviation of the second row over
+one hundred resamples of the data, and the fourth the nearest measured
+test. Tested ranges are $30$--$65$~\% fineness, pH $3.5$--$11$, diesel
+$50$--$200$~g/t, conditioning $5$--$25$~min.}
+\label{tab:window}
+\begin{tabular}{lcccccc}
+\toprule
+ & Fineness & Pulp & Diesel & Time & Mo & Cu\\
+ & (\%) & pH & (g/t) & (min) & (\%) & (\%)\\
+\midrule
+Balanced trade-off        & $65$         & $11.0$        & $200$         & $24$        & $3.97$ & $0.347$\\
+Min.\ Cu, Mo $\geq 3.5$~\% & $65$         & $9.4$         & $168$         & $25$        & $3.51$ & $0.328$\\
+\quad median of resamples & $63 \pm 6$   & $9.3 \pm 2.2$ & $154 \pm 28$  & $21 \pm 5$  & ---    & $0.329 \pm 0.041$\\
+Measured test 20          & $65$         & $11.0$        & $200$         & $15$        & $4.02$ & $0.328$\\
+\bottomrule
+\end{tabular}
+\end{table}
 
-A variogram-based Gaussian process workflow that performs satisfactorily
-on a designed flotation experiment does not transfer without modification
-to plant campaign data. Three assumptions underlie this difference, and
-each is identifiable from the data in advance: independent simulation of
-principal components which are subsequently combined through a nonlinear
-inverse transformation, a single correlation length applied across
-predictors of unequal influence, and exact interpolation of observations
-subject to measurement variability. Modifying each of these, and
-replacing the Pareto frontier with a reliability-based criterion once the
-responses were found not to be in conflict, produces predictions that
-satisfy physical bounds, an uncertainty estimate consistent with the
-observed variability, and an operating window in agreement with the
-independent conclusions of the campaign. These modifications are
-recommended as prerequisites for the application of variogram-based
-Gaussian process regression to industrial flotation data.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{Fig5_ensemble.png}
+\caption{Posterior mean and standard deviation of copper grade over the
+fineness $\times$ diesel plane, and the probability that it is at or
+below $0.33$~\%.}
+\label{fig:ens}
+\end{figure}
+
+Three checks apply. The nearest measured test, test~20, was run at the
+same fineness, pH and diesel dosage with a conditioning time of
+$15$~min and returned $4.02$~\% molybdenum and $0.328$~\% copper, so the
+predicted grades agree with a measurement at adjacent settings to within
+$0.02$ percentage points of copper. Refitting from eight random
+initialisations returns the same point. Resampling places the copper
+grade achievable subject to a molybdenum grade of at least $3.5$~\% at
+$0.329 \pm 0.041$~\%. At a molybdenum target of $4$~\% the best
+achievable copper grade rises to $0.416$~\%, so the constraint binds.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{Fig6_pareto.png}
+\caption{(a) Interpolated grades with the non-dominated set and the best
+trade-off. (b), (c) Projections into input space with the recommended
+point marked. (d) Copper grade achieved at the constrained optimum over
+one hundred data resamples.}
+\label{fig:pareto}
+\end{figure}
+
+\subsection{Transfer to the plant}
+
+The bench design ends at $65$~\% fineness, so the surveys locate the
+optimum relative to that boundary. All three lines reach their maximum
+molybdenum grade at $65$~\% and their minimum copper grade between $70$
+and $75$~\%, and molybdenum grade falls sharply at $75$~\%
+(Fig.~\ref{fig:transfer}); with the bench model this places the optimum
+at $65$ to $70$~\%. The three lines give a pooled standard deviation of
+$0.82$ percentage points of molybdenum grade and $0.053$ of copper grade
+on fifteen degrees of freedom, against a spread of $4.08$ and $0.215$
+across the fineness range --- a signal-to-noise ratio of about five for
+molybdenum and four for copper.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{Fig7_transfer.png}
+\caption{Both grades against grind fineness for the three plant surveys
+and the bench fineness sweep. The band is the plant pure error, $\pm$
+one pooled standard deviation about the mean.}
+\label{fig:transfer}
+\end{figure}
+
+\subsection{The pulp environment}
+
+Apparent viscosity falls with temperature for chlorite by $15.8$~\% over
+$5$ to $35$~$^\circ$C, for muscovite by $12.3$~\% and for illite by
+$7.0$~\%. Kaolinite gives about $385$~mPa~s where the others give
+$180$--$205$, and falls by only $2.5$~\%; its replicates differ by
+$32$~mPa~s against $5$ to $9$ for the others, so the correct statement
+is the absence of a detectable temperature response rather than a
+smaller one. A clean concentrate loses hydrophobicity on heating, its
+contact angle falling from $82.8^\circ$ at $10$~$^\circ$C to $67.8^\circ$
+at $50$~$^\circ$C; with $25$~\% chlorite it gains hydrophobicity over
+the same interval, from $85.6^\circ$ to $91.3^\circ$
+(Fig.~\ref{fig:pulp}). The sign of the temperature coefficient therefore
+reverses with clay present, and the reversal is established by the time
+a quarter of the solids are clay. Diesel dosage acts in the same
+direction and to a similar optimum near $100$~g/t in both systems, but
+the effect is twice as large without clay.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{Fig8_pulp.png}
+\caption{(a) Apparent viscosity against temperature for four clays at
+$100$~s$^{-1}$, with the replicate spread. (b) Contact angle against
+temperature in the two systems. (c) Contact angle against diesel
+dosage.}
+\label{fig:pulp}
+\end{figure}
+
+\section{Discussion and conclusions}
+
+The recommended window is supported by a measured test at adjacent
+settings, by refitting, and by the fineness optimum of three plant
+surveys, and should be read against the uncertainty of
+Fig.~\ref{fig:ens}. The quantity the decision depends on, the copper
+grade achievable subject to a molybdenum constraint, is better
+determined than the settings that deliver it.
+
+The operating variables do not control the separation. Molybdenum and
+copper grade correlate at $+0.678$, and their ratio is not predictable
+from any of the four: fitted directly to the ratio the same covariance
+function returns $Q^2 = -0.072$, and forming the ratio from the two
+leave-one-out predictions returns $Q^2 = -0.002$. Two independent routes
+agreeing on a negative result exclude an artefact of a particular fit,
+though not an effect smaller than the dataset can resolve. The
+interaction in the fineness $\times$ diesel plane is not an exception,
+since it displaces both grades together.
+
+The pulp measurements indicate where selectivity is instead determined.
+The concentrator faces a colder pulp and a different clay loading in
+winter, and the two act in opposing directions: heating lowers the
+viscosity penalty but also lowers the contact angle of a clean
+concentrate and raises that of one carrying chlorite. Kaolinite, both
+the most viscous clay and the one whose viscosity does not respond to
+temperature, cannot be assisted by heating. Converting this mechanism
+into a control strategy requires flotation tests at controlled
+temperature with the clay mineralogy characterised.
+
+The data come from a single deposit, so the numerical results are local,
+and reagent--reagent interactions are unidentified.
 
 \end{document}
