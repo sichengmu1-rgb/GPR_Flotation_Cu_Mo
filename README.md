@@ -1,4 +1,4 @@
-# gpr-flotation-cu-mo
+# GPR_Flotation_Cu_Mo
 
 Variogram-based Gaussian process regression of **concentrate grade** in
 copper–molybdenum flotation, applied to a two-year campaign at the
@@ -12,6 +12,10 @@ concentrate has to come down. The model answers it, and also reports
 what these four operating variables cannot do.
 
 Draft preprint: `paper/manuscript.pdf`
+
+![Fitted kriging surfaces for molybdenum and copper grade over the three two-factor planes](figures/Fig4_surface.png)
+
+*Fitted kriging surfaces, taken as slices through the validated four-dimensional model. Points are the tests lying on each plane.*
 
 ---
 
@@ -36,6 +40,10 @@ The surfaces are taken as **slices through the validated 4-D model**,
 not as separate two-parameter fits. A separate fit on 15 points
 cross-validates far worse (Q² between −0.01 and 0.40) because it throws
 away what the other factors carry.
+
+![The twenty-nine bench tests and two of the three planes](figures/Fig1_data.png)
+
+*(a) The twenty-nine bench tests, coloured by grind fineness. (b), (c) The fineness × pH and fineness × diesel planes.*
 
 ## Grade, not recovery
 
@@ -83,6 +91,10 @@ one hundred data resamples of the recommended point
 The settings are less well determined than the grade they deliver, which
 is why the recommendation is given as a grade with an interval.
 
+![The separation trade-off, the recommended point, and its projections into input space](figures/Fig6_pareto.png)
+
+*(a) Interpolated grades with the non-dominated set and the best trade-off. (b), (c) Projections into input space with the recommended point marked. (d) Copper grade achieved at the constrained optimum over one hundred data resamples.*
+
 **Plant validation**
 
 Three lines surveyed at the same six fineness levels give a pure error
@@ -127,6 +139,10 @@ The sign reverses. Heating a pulp therefore helps or hurts molybdenum
 floatability depending on its clay loading — a mechanism for the
 seasonal variation that motivated the campaign, not yet an operating
 rule for it.
+
+![Pulp rheology and concentrate wettability](figures/Fig8_pulp.png)
+
+*(a) Apparent viscosity against temperature for four clays. (b) Contact angle against temperature in the two systems: the correlation with temperature changes from negative to positive once clay is present. (c) Contact angle against diesel dosage.*
 
 ---
 

@@ -1,6 +1,6 @@
 """Build the four analysis datasets from the raw report / XRF sources.
 
-Outputs (utf-8-sig CSV) into  gpr-v2/data/ :
+Outputs (utf-8-sig CSV) into  <repo>/data/ :
   flotation_bench.csv   29 bench flotation tests, grade + recovery
   flotation_plant.csv   3 plant fineness surveys, grade
   rheology.csv          apparent viscosity vs T / clay / shear rate
@@ -13,7 +13,7 @@ import openpyxl
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ORIG = os.path.join(HERE, "origin_data")
-OUT = os.path.join(os.path.dirname(HERE), "gpr-v2", "data")
+OUT = os.path.join(os.path.dirname(HERE), "data")
 os.makedirs(OUT, exist_ok=True)
 log = io.StringIO()
 W = log.write
@@ -189,35 +189,35 @@ def add_wet(system, temp_col, clay_pct, diesel, path, ycol=1, label=None):
 T36 = [10, 20, 30, 40, 50]
 d36 = find("图4-36 温度对钼精矿润湿性的影响")
 for i, r in enumerate(rd(os.path.join(d36, "图数据_[Graph1]Layer1_曲线1.csv"))[1:]):
-    wet.append(dict(system="clean", temperature=T36[i], clay_pct=0,
+    wet.append(dict(series="temperature", system="clean", temperature=T36[i], clay_pct=0,
                     diesel_gpt=0, contact_angle=float(r[1])))
 # 图4-37 : chlorite content sweep, run at 10 degC (see above)
 d37 = find("图4-37 绿泥石含量对精矿润湿性的影响")
 for r in rd(os.path.join(d37, "Book1_绿泥石：辉钼矿.csv"))[1:]:
-    wet.append(dict(system="content-sweep", temperature=10, clay_pct=float(r[0]),
+    wet.append(dict(series="content", system="content-sweep", temperature=10, clay_pct=float(r[0]),
                     diesel_gpt=0, contact_angle=float(r[1])))
 # 图4-38 : 25 % chlorite, temperature sweep (temperatures documented in the sheet)
 d38 = find("图4-38 温度对绿泥石含量占比为25 %体系下辉钼矿润湿性的影响")
 for r in rd(os.path.join(d38, "Book1_Sheet2.csv"))[1:]:
-    wet.append(dict(system="chlorite25", temperature=float(r[0]), clay_pct=25,
+    wet.append(dict(series="temperature", system="chlorite25", temperature=float(r[0]), clay_pct=25,
                     diesel_gpt=0, contact_angle=float(r[1])))
 # 图4-39 : diesel sweep, clean, at 30 degC
 d39 = find("图4-39 柴油用量对钼精矿润湿性的影响")
 for r in rd(os.path.join(d39, "Book1_Sheet6.csv"))[1:]:
-    wet.append(dict(system="clean", temperature=30, clay_pct=0,
+    wet.append(dict(series="diesel", system="clean", temperature=30, clay_pct=0,
                     diesel_gpt=float(r[0]), contact_angle=float(r[1])))
 # 图4-40 : diesel sweep, 25 % chlorite, at 30 degC
 d40 = find("图4-40 柴油用量对绿泥石含量占比为25 %体系下辉钼矿润湿性的影响")
 for r in rd(os.path.join(d40, "Book1_Sheet4.csv"))[1:]:
-    wet.append(dict(system="chlorite25", temperature=30, clay_pct=25,
+    wet.append(dict(series="diesel", system="chlorite25", temperature=30, clay_pct=25,
                     diesel_gpt=float(r[0]), contact_angle=float(r[1])))
 
 with open(os.path.join(OUT, "wettability.csv"), "w", newline="", encoding="utf-8-sig") as f:
-    w = csv.DictWriter(f, fieldnames=["system", "temperature", "clay_pct", "diesel_gpt", "contact_angle"])
+    w = csv.DictWriter(f, fieldnames=["series", "system", "temperature", "clay_pct", "diesel_gpt", "contact_angle"])
     w.writeheader(); w.writerows(wet)
 W(f"\n=== wettability: {len(wet)} rows ===\n")
 for r in wet:
-    W(f"  {r['system']:<14} T={r['temperature']:>5}  clay={r['clay_pct']:>5}%  "
+    W(f"  {r['series']:<12} {r['system']:<14} T={r['temperature']:>5}  clay={r['clay_pct']:>5}%  "
       f"diesel={r['diesel_gpt']:>5}  theta={r['contact_angle']}\n")
 
 open(os.path.join(HERE, "_build_out.txt"), "w", encoding="utf-8").write(log.getvalue())
