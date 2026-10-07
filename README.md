@@ -13,6 +13,8 @@ what these four operating variables cannot do.
 
 Draft preprint: `paper/manuscript.pdf`
 
+Research note: `research_idea/research_idea.pdf` — what I would do next.
+
 ![Fitted kriging surfaces for molybdenum and copper grade over the three two-factor planes](figures/Fig4_surface.png)
 
 *Fitted kriging surfaces, taken as slices through the validated four-dimensional model. Points are the tests lying on each plane.*
@@ -157,6 +159,7 @@ code/build_datasets.py      archival: how the four CSVs were derived
 code/run_analysis.py        fits the models, writes the eight figures
 figures/                    eight figures
 paper/manuscript.pdf        9-page draft
+research_idea/              two-page research note, LaTeX source and figure scripts
 ```
 
 ## Run
@@ -207,6 +210,37 @@ Four things needed resolving:
   doi     = {10.1016/j.mineng.2025.110000}
 }
 ```
+
+## Research note: from this analysis to reagent design
+
+Everything above is the substrate for a question this repository does not
+answer. The four variables the plant can adjust govern the mass pull and
+not the selectivity of the separation, so the copper penalty is not
+reachable from the dosage and the search has to move one level down, to
+the molecule.
+
+`research_idea/research_idea.pdf` is a two-page note setting out a
+framework that does this. It keeps the variogram-based Gaussian process
+of Eskanlou, Yin & Caers as the learning step and moves it into molecular
+descriptor space: periodic DFT and explicit-water molecular dynamics
+supply descriptors for a family of collectors, the Gaussian process maps
+those descriptors together with the plant variables to the interfacial
+state and the flotation response, and the posterior is inverted to rank
+candidate molecules with uncertainty intervals on the selectivity–recovery
+trade-off. A block of experimental conditions, reserved before any model
+is fitted and never used in fitting, tests whether the ranking transfers
+to conditions the model has not seen.
+
+![The molecular scale and the process scale, joined by a learned closure](research_idea/figure/fig1_loops.png)
+
+*The molecular scale and the process scale, joined by a single learned closure (Fig. 1 of the note).*
+
+![The surrogate and its inversion](research_idea/figure/fig2_surrogate.png)
+
+*(a) The variogram recovered from this repository's own campaign data — the nugget is the finite reproducibility of a flotation test. (b) A worked kriging posterior over two molecular descriptors. (c) Candidates ranked on the selectivity–recovery trade-off, with intervals (Fig. 2 of the note).*
+
+The note and its figures are reproducible from `research_idea/`: the
+LaTeX source and the three plotting scripts are included.
 
 ## Data source
 
